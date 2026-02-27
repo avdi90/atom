@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Atom Visualizer 118</title>
+<style>
+  :root {
+    --bg1: #0a0a1a;
+    --bg2: #0d1b2a;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff6b;
+    --text: #e8f4fd;
+    --card: rgba(255,255,255,0.05);
+    --border: rgba(0,212,255,0.3);
+    --radius: 12px;
+    --btn-h: 48px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, #1a0a2e 100%);
+    color: var(--text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  h1 {
+    text-align: center;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+
+  /* ── CONTROLS PANEL ── */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .controls input, .controls select {
+    height: var(--btn-h);
+    padding: 0 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    min-width: 140px;
+  }
+  .controls input:focus, .controls select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(0,212,255,0.4);
+  }
+  .controls select option { background: #0d1b2a; }
+  .btn {
+    height: var(--btn-h);
+    padding: 0 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: rgba(0,212,255,0.25); box-shadow: 0 0 12px rgba(0,212,255,0.4); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.orange { border-color: rgba(255,107,53,0.5); color: var(--accent2); background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,107,53,0.05)); }
+  .btn.orange:hover { background: rgba(255,107,53,0.25); box-shadow: 0 0 12px rgba(255,107,53,0.4); }
+  .btn.green { border-color: rgba(127,255,107,0.5); color: var(--accent3); background: linear-gradient(135deg, rgba(127,255,107,0.15), rgba(127,255,107,0.05)); }
+  .btn.green:hover { background: rgba(127,255,107,0.25); box-shadow: 0 0 12px rgba(127,255,107,0.4); }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  canvas {
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    box-shadow: 0 0 30px rgba(0,212,255,0.2);
+    background: #000010;
+    max-width: 100%;
+  }
+
+  /* ── INFO PANEL ── */
+  .info-panel {
+    min-width: 260px;
+    max-width: 340px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .element-symbol {
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.6);
+    line-height: 1;
+  }
+  .element-name {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .element-z {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .prop-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-size: 0.95rem;
+  }
+  .prop-row:last-child { border-bottom: none; }
+  .prop-label { color: rgba(255,255,255,0.55); }
+  .prop-value { color: var(--text); font-weight: 600; }
+  .shells-display {
+    background: linear-gradient(135deg, rgba(127,255,107,0.1), rgba(0,212,255,0.05));
+    border: 1px solid rgba(127,255,107,0.3);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .shells-title { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .shells-value { font-size: 1.3rem; font-weight: 700; color: var(--accent3); }
+  .shells-label { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+  /* ── QUIZ PANEL ── */
+  .quiz-panel {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .quiz-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .quiz-q {
+    margin-bottom: 14px;
+  }
+  .quiz-q label { display: block; font-size: 0.95rem; color: var(--text); margin-bottom: 8px; font-weight: 600; }
+  .quiz-q input[type=number], .quiz-q select {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+  }
+  .quiz-q input:focus, .quiz-q select:focus { border-color: var(--accent); }
+  .quiz-q select option { background: #0d1b2a; }
+  .feedback { font-size: 1.1rem; margin-top: 6px; min-height: 24px; }
+  .quiz-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .quiz-score {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 12px;
+    min-height: 28px;
+  }
+
+  @media (max-width: 600px) {
+    .controls input, .controls select { min-width: 120px; font-size: 0.9rem; }
+    .btn { padding: 0 14px; font-size: 0.9rem; }
+    .element-symbol { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>⚛️ Ultimate Atom Visualizer 118</h1>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <input type="number" id="zInput" min="1" max="118" value="1" placeholder="Z (1-118)" title="Numri Atomik">
+  <select id="elementDropdown" title="Zgjidh elementin"></select>
+  <input type="text" id="searchInput" placeholder="Kërko (O, Fe, oxygen…)" title="Kërko element">
+  <button class="btn" onclick="onSearch()">🔍 Kërko</button>
+  <button class="btn" onclick="navigate(-1)">◀ Mëparshëm</button>
+  <button class="btn" onclick="navigate(1)">Tjetri ▶</button>
+  <button class="btn orange" onclick="goRandom()">🎲 Rastësor</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <canvas id="atomCanvas" width="420" height="420"></canvas>
+
+  <div class="info-panel">
+    <div class="info-card">
+      <div class="element-symbol" id="infoSymbol">H</div>
+      <div class="element-name" id="infoName">Hydrogen</div>
+      <div class="element-z" id="infoZ">Z = 1</div>
+    </div>
+    <div class="info-card">
+      <div class="prop-row"><span class="prop-label">Masa Atomike</span><span class="prop-value" id="infoMass">1.008 u</span></div>
+      <div class="prop-row"><span class="prop-label">Perioda</span><span class="prop-value" id="infoPeriod">1</span></div>
+      <div class="prop-row"><span class="prop-label">Grupi</span><span class="prop-value" id="infoGroup">1</span></div>
+      <div class="prop-row"><span class="prop-label">Kategoria</span><span class="prop-value" id="infoCategory">Jometal</span></div>
+      <div class="prop-row"><span class="prop-label">Elektronet</span><span class="prop-value" id="infoElectrons">1</span></div>
+      <div class="prop-row"><span class="prop-label">Neutronet</span><span class="prop-value" id="infoNeutrons">0</span></div>
+    </div>
+    <div class="shells-display">
+      <div class="shells-title">Shpërndarja e Elektroneve (Bohr)</div>
+      <div class="shells-value" id="shellsValue">2</div>
+      <div class="shells-label">Shtresat: <span id="shellsCount">1</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="quiz-panel" style="margin-top:20px;">
+  <div class="quiz-title">🧠 Mini-Kuiz — Testo Njohuritë!</div>
+
+  <div class="quiz-q">
+    <label id="q1label">1️⃣ Sa elektrone ka shtresa e parë e këtij atomi?</label>
+    <input type="number" id="q1" min="0" max="32" placeholder="Shkruaj numrin...">
+    <div class="feedback" id="fb1"></div>
+  </div>
+
+  <div class="quiz-q">
+    <label>2️⃣ Numri i elektroneve = Numri Atomik: E vërtetë apo E gabuar?</label>
+    <select id="q2">
+      <option value="">-- Zgjidh --</option>
+      <option value="true">✅ E vërtetë</option>
+      <option value="false">❌ E gabuar</option>
+    </select>
+    <div class="feedback" id="fb2"></div>
+  </div>
+
+  <div class="quiz-q">
+    <label id="q3label">3️⃣ Sa shtresa elektronike ka ky atom?</label>
+    <input type="number" id="q3" min="1" max="7" placeholder="Shkruaj numrin...">
+    <div class="feedback" id="fb3"></div>
+  </div>
+
+  <div class="quiz-actions">
+    <button class="btn green" onclick="checkQuiz()" style="flex:1;font-size:1rem;">✅ Kontrollo Përgjigjet</button>
+    <button class="btn" onclick="resetQuiz()" style="font-size:1rem;">🔄 Rifillo</button>
+  </div>
+  <div class="quiz-score" id="quizScore"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  ELEMENT DATA (Z=1..118)
+// ═══════════════════════════════════════════
+const ELEMENTS = [
+  null, // index 0 unused
+  {z:1,  sym:"H",  name:"Hydrogen",      mass:1.008,   period:1, group:1,  cat:"Jometal"},
+  {z:2,  sym:"He", name:"Helium",        mass:4.003,   period:1, group:18, cat:"Gaz fisnik"},
+  {z:3,  sym:"Li", name:"Lithium",       mass:6.941,   period:2, group:1,  cat:"Metal alkali"},
+  {z:4,  sym:"Be", name:"Beryllium",     mass:9.012,   period:2, group:2,  cat:"Metal alkali dheu"},
+  {z:5,  sym:"B",  name:"Boron",         mass:10.81,   period:2, group:13, cat:"Metaloid"},
+  {z:6,  sym:"C",  name:"Carbon",        mass:12.01,   period:2, group:14, cat:"Jometal"},
+  {z:7,  sym:"N",  name:"Nitrogen",      mass:14.01,   period:2, group:15, cat:"Jometal"},
+  {z:8,  sym:"O",  name:"Oxygen",        mass:16.00,   period:2, group:16, cat:"Jometal"},
+  {z:9,  sym:"F",  name:"Fluorine",      mass:19.00,   period:2, group:17, cat:"Jometal"},
+  {z:10, sym:"Ne", name:"Neon",          mass:20.18,   period:2, group:18, cat:"Gaz fisnik"},
+  {z:11, sym:"Na", name:"Sodium",        mass:22.99,   period:3, group:1,  cat:"Metal alkali"},
+  {z:12, sym:"Mg", name:"Magnesium",     mass:24.31,   period:3, group:2,  cat:"Metal alkali dheu"},
+  {z:13, sym:"Al", name:"Aluminum",      mass:26.98,   period:3, group:13, cat:"Metal"},
+  {z:14, sym:"Si", name:"Silicon",       mass:28.09,   period:3, group:14, cat:"Metaloid"},
+  {z:15, sym:"P",  name:"Phosphorus",    mass:30.97,   period:3, group:15, cat:"Jometal"},
+  {z:16, sym:"S",  name:"Sulfur",        mass:32.07,   period:3, group:16, cat:"Jometal"},
+  {z:17, sym:"Cl", name:"Chlorine",      mass:35.45,   period:3, group:17, cat:"Jometal"},
+  {z:18, sym:"Ar", name:"Argon",         mass:39.95,   period:3, group:18, cat:"Gaz fisnik"},
+  {z:19, sym:"K",  name:"Potassium",     mass:39.10,   period:4, group:1,  cat:"Metal alkali"},
+  {z:20, sym:"Ca", name:"Calcium",       mass:40.08,   period:4, group:2,  cat:"Metal alkali dheu"},
+  {z:21, sym:"Sc", name:"Scandium",      mass:44.96,   period:4, group:3,  cat:"Metal tranzicion"},
+  {z:22, sym:"Ti", name:"Titanium",      mass:47.87,   period:4, group:4,  cat:"Metal tranzicion"},
+  {z:23, sym:"V",  name:"Vanadium",      mass:50.94,   period:4, group:5,  cat:"Metal tranzicion"},
+  {z:24, sym:"Cr", name:"Chromium",      mass:52.00,   period:4, group:6,  cat:"Metal tranzicion"},
+  {z:25, sym:"Mn", name:"Manganese",     mass:54.94,   period:4, group:7,  cat:"Metal tranzicion"},
+  {z:26, sym:"Fe", name:"Iron",          mass:55.85,   period:4, group:8,  cat:"Metal tranzicion"},
+  {z:27, sym:"Co", name:"Cobalt",        mass:58.93,   period:4, group:9,  cat:"Metal tranzicion"},
+  {z:28, sym:"Ni", name:"Nickel",        mass:58.69,   period:4, group:10, cat:"Metal tranzicion"},
+  {z:29, sym:"Cu", name:"Copper",        mass:63.55,   period:4, group:11, cat:"Metal tranzicion"},
+  {z:30, sym:"Zn", name:"Zinc",          mass:65.38,   period:4, group:12, cat:"Metal tranzicion"},
+  {z:31, sym:"Ga", name:"Gallium",       mass:69.72,   period:4, group:13, cat:"Metal"},
+  {z:32, sym:"Ge", name:"Germanium",     mass:72.63,   period:4, group:14, cat:"Metaloid"},
+  {z:33, sym:"As", name:"Arsenic",       mass:74.92,   period:4, group:15, cat:"Metaloid"},
+  {z:34, sym:"Se", name:"Selenium",      mass:78.97,   period:4, group:16, cat:"Jometal"},
+  {z:35, sym:"Br", name:"Bromine",       mass:79.90,   period:4, group:17, cat:"Jometal"},
+  {z:36, sym:"Kr", name:"Krypton",       mass:83.80,   period:4, group:18, cat:"Gaz fisnik"},
+  {z:37, sym:"Rb", name:"Rubidium",      mass:85.47,   period:5, group:1,  cat:"Metal alkali"},
+  {z:38, sym:"Sr", name:"Strontium",     mass:87.62,   period:5, group:2,  cat:"Metal alkali dheu"},
+  {z:39, sym:"Y",  name:"Yttrium",       mass:88.91,   period:5, group:3,  cat:"Metal tranzicion"},
+  {z:40, sym:"Zr", name:"Zirconium",     mass:91.22,   period:5, group:4,  cat:"Metal tranzicion"},
+  {z:41, sym:"Nb", name:"Niobium",       mass:92.91,   period:5, group:5,  cat:"Metal tranzicion"},
+  {z:42, sym:"Mo", name:"Molybdenum",    mass:95.96,   period:5, group:6,  cat:"Metal tranzicion"},
+  {z:43, sym:"Tc", name:"Technetium",    mass:98.00,   period:5, group:7,  cat:"Metal tranzicion"},
+  {z:44, sym:"Ru", name:"Ruthenium",     mass:101.07,  period:5, group:8,  cat:"Metal tranzicion"},
+  {z:45, sym:"Rh", name:"Rhodium",       mass:102.91,  period:5, group:9,  cat:"Metal tranzicion"},
+  {z:46, sym:"Pd", name:"Palladium",     mass:106.42,  period:5, group:10, cat:"Metal tranzicion"},
+  {z:47, sym:"Ag", name:"Silver",        mass:107.87,  period:5, group:11, cat:"Metal tranzicion"},
+  {z:48, sym:"Cd", name:"Cadmium",       mass:112.41,  period:5, group:12, cat:"Metal tranzicion"},
+  {z:49, sym:"In", name:"Indium",        mass:114.82,  period:5, group:13, cat:"Metal"},
+  {z:50, sym:"Sn", name:"Tin",           mass:118.71,  period:5, group:14, cat:"Metal"},
+  {z:51, sym:"Sb", name:"Antimony",      mass:121.76,  period:5, group:15, cat:"Metaloid"},
+  {z:52, sym:"Te", name:"Tellurium",     mass:127.60,  period:5, group:16, cat:"Metaloid"},
+  {z:53, sym:"I",  name:"Iodine",        mass:126.90,  period:5, group:17, cat:"Jometal"},
+  {z:54, sym:"Xe", name:"Xenon",         mass:131.29,  period:5, group:18, cat:"Gaz fisnik"},
+  {z:55, sym:"Cs", name:"Cesium",        mass:132.91,  period:6, group:1,  cat:"Metal alkali"},
+  {z:56, sym:"Ba", name:"Barium",        mass:137.33,  period:6, group:2,  cat:"Metal alkali dheu"},
+  {z:57, sym:"La", name:"Lanthanum",     mass:138.91,  period:6, group:3,  cat:"Lantanid"},
+  {z:58, sym:"Ce", name:"Cerium",        mass:140.12,  period:6, group:3,  cat:"Lantanid"},
+  {z:59, sym:"Pr", name:"Praseodymium",  mass:140.91,  period:6, group:3,  cat:"Lantanid"},
+  {z:60, sym:"Nd", name:"Neodymium",     mass:144.24,  period:6, group:3,  cat:"Lantanid"},
+  {z:61, sym:"Pm", name:"Promethium",    mass:145.00,  period:6, group:3,  cat:"Lantanid"},
+  {z:62, sym:"Sm", name:"Samarium",      mass:150.36,  period:6, group:3,  cat:"Lantanid"},
+  {z:63, sym:"Eu", name:"Europium",      mass:151.96,  period:6, group:3,  cat:"Lantanid"},
+  {z:64, sym:"Gd", name:"Gadolinium",    mass:157.25,  period:6, group:3,  cat:"Lantanid"},
+  {z:65, sym:"Tb", name:"Terbium",       mass:158.93,  period:6, group:3,  cat:"Lantanid"},
+  {z:66, sym:"Dy", name:"Dysprosium",    mass:162.50,  period:6, group:3,  cat:"Lantanid"},
+  {z:67, sym:"Ho", name:"Holmium",       mass:164.93,  period:6, group:3,  cat:"Lantanid"},
+  {z:68, sym:"Er", name:"Erbium",        mass:167.26,  period:6, group:3,  cat:"Lantanid"},
+  {z:69, sym:"Tm", name:"Thulium",       mass:168.93,  period:6, group:3,  cat:"Lantanid"},
+  {z:70, sym:"Yb", name:"Ytterbium",     mass:173.05,  period:6, group:3,  cat:"Lantanid"},
+  {z:71, sym:"Lu", name:"Lutetium",      mass:174.97,  period:6, group:3,  cat:"Lantanid"},
+  {z:72, sym:"Hf", name:"Hafnium",       mass:178.49,  period:6, group:4,  cat:"Metal tranzicion"},
+  {z:73, sym:"Ta", name:"Tantalum",      mass:180.95,  period:6, group:5,  cat:"Metal tranzicion"},
+  {z:74, sym:"W",  name:"Tungsten",      mass:183.84,  period:6, group:6,  cat:"Metal tranzicion"},
+  {z:75, sym:"Re", name:"Rhenium",       mass:186.21,  period:6, group:7,  cat:"Metal tranzicion"},
+  {z:76, sym:"Os", name:"Osmium",        mass:190.23,  period:6, group:8,  cat:"Metal tranzicion"},
+  {z:77, sym:"Ir", name:"Iridium",       mass:192.22,  period:6, group:9,  cat:"Metal tranzicion"},
+  {z:78, sym:"Pt", name:"Platinum",      mass:195.08,  period:6, group:10, cat:"Metal tranzicion"},
+  {z:79, sym:"Au", name:"Gold",          mass:196.97,  period:6, group:11, cat:"Metal tranzicion"},
+  {z:80, sym:"Hg", name:"Mercury",       mass:200.59,  period:6, group:12, cat:"Metal tranzicion"},
+  {z:81, sym:"Tl", name:"Thallium",      mass:204.38,  period:6, group:13, cat:"Metal"},
+  {z:82, sym:"Pb", name:"Lead",          mass:207.20,  period:6, group:14, cat:"Metal"},
+  {z:83, sym:"Bi", name:"Bismuth",       mass:208.98,  period:6, group:15, cat:"Metal"},
+  {z:84, sym:"Po", name:"Polonium",      mass:209.00,  period:6, group:16, cat:"Metaloid"},
+  {z:85, sym:"At", name:"Astatine",      mass:210.00,  period:6, group:17, cat:"Jometal"},
+  {z:86, sym:"Rn", name:"Radon",         mass:222.00,  period:6, group:18, cat:"Gaz fisnik"},
+  {z:87, sym:"Fr", name:"Francium",      mass:223.00,  period:7, group:1,  cat:"Metal alkali"},
+  {z:88, sym:"Ra", name:"Radium",        mass:226.00,  period:7, group:2,  cat:"Metal alkali dheu"},
+  {z:89, sym:"Ac", name:"Actinium",      mass:227.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:90, sym:"Th", name:"Thorium",       mass:232.04,  period:7, group:3,  cat:"Aktinid"},
+  {z:91, sym:"Pa", name:"Protactinium",  mass:231.04,  period:7, group:3,  cat:"Aktinid"},
+  {z:92, sym:"U",  name:"Uranium",       mass:238.03,  period:7, group:3,  cat:"Aktinid"},
+  {z:93, sym:"Np", name:"Neptunium",     mass:237.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:94, sym:"Pu", name:"Plutonium",     mass:244.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:95, sym:"Am", name:"Americium",     mass:243.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:96, sym:"Cm", name:"Curium",        mass:247.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:97, sym:"Bk", name:"Berkelium",     mass:247.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:98, sym:"Cf", name:"Californium",   mass:251.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:99, sym:"Es", name:"Einsteinium",   mass:252.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:100,sym:"Fm", name:"Fermium",       mass:257.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:101,sym:"Md", name:"Mendelevium",   mass:258.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:102,sym:"No", name:"Nobelium",      mass:259.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:103,sym:"Lr", name:"Lawrencium",    mass:262.00,  period:7, group:3,  cat:"Aktinid"},
+  {z:104,sym:"Rf", name:"Rutherfordium", mass:267.00,  period:7, group:4,  cat:"Metal tranzicion"},
+  {z:105,sym:"Db", name:"Dubnium",       mass:270.00,  period:7, group:5,  cat:"Metal tranzicion"},
+  {z:106,sym:"Sg", name:"Seaborgium",    mass:271.00,  period:7, group:6,  cat:"Metal tranzicion"},
+  {z:107,sym:"Bh", name:"Bohrium",       mass:270.00,  period:7, group:7,  cat:"Metal tranzicion"},
+  {z:108,sym:"Hs", name:"Hassium",       mass:277.00,  period:7, group:8,  cat:"Metal tranzicion"},
+  {z:109,sym:"Mt", name:"Meitnerium",    mass:278.00,  period:7, group:9,  cat:"Metal tranzicion"},
+  {z:110,sym:"Ds", name:"Darmstadtium",  mass:281.00,  period:7, group:10, cat:"Metal tranzicion"},
+  {z:111,sym:"Rg", name:"Roentgenium",   mass:282.00,  period:7, group:11, cat:"Metal tranzicion"},
+  {z:112,sym:"Cn", name:"Copernicium",   mass:285.00,  period:7, group:12, cat:"Metal tranzicion"},
+  {z:113,sym:"Nh", name:"Nihonium",      mass:286.00,  period:7, group:13, cat:"Metal"},
+  {z:114,sym:"Fl", name:"Flerovium",     mass:289.00,  period:7, group:14, cat:"Metal"},
+  {z:115,sym:"Mc", name:"Moscovium",     mass:290.00,  period:7, group:15, cat:"Metal"},
+  {z:116,sym:"Lv", name:"Livermorium",   mass:293.00,  period:7, group:16, cat:"Metal"},
+  {z:117,sym:"Ts", name:"Tennessine",    mass:294.00,  period:7, group:17, cat:"Jometal"},
+  {z:118,sym:"Og", name:"Oganesson",     mass:294.00,  period:7, group:18, cat:"Gaz fisnik"},
+];
+
+// Neutron approximations
+const NEUTRONS = [
+  0,0,2,4,5,6,6,7,8,10,10,12,12,14,14,16,16,18,22,20,20,
+  24,26,28,28,30,30,32,30,32,34,36,38,40,42,44,44,46,46,48,50,52,
+  54,56,58,60,60,62,64,66,68,70,72,74,74,76,78,82,82,82,82,84,90,
+  90,92,94,96,98,100,100,102,104,106,108,110,108,110,112,114,116,
+  118,120,122,124,124,125,126,125,126,136,138,140,142,144,146,148,
+  151,153,157,153,157,157,160,163,165,167,
+];
+
+// Approximate neutrons for missing entries
+for (let i = 1; i <= 118; i++) {
+  if (!NEUTRONS[i]) NEUTRONS[i] = Math.round(i * 1.25);
+}
+
+// Shell limits (Bohr model simplified)
+const SHELL_LIMITS = [2, 8, 18, 32, 32, 18, 8];
+
+function getShells(z) {
+  let remaining = z;
+  const shells = [];
+  for (let limit of SHELL_LIMITS) {
+    if (remaining <= 0) break;
+    const fill = Math.min(remaining, limit);
+    shells.push(fill);
+    remaining -= fill;
+  }
+  return shells;
+}
+
+// ═══════════════════════════════════════════
+//  CANVAS ANIMATION
+// ═══════════════════════════════════════════
+const canvas = document.getElementById('atomCanvas');
+const ctx = canvas.getContext('2d');
+let animFrame = null;
+let electrons = [];
+let currentZ = 1;
+
+// Category colors
+const CAT_COLORS = {
+  "Jometal":           "#00d4ff",
+  "Gaz fisnik":        "#ff6b35",
+  "Metal alkali":      "#ff4fa3",
+  "Metal alkali dheu": "#ffd700",
+  "Metaloid":          "#7fff6b",
+  "Metal":             "#a8d8ea",
+  "Metal tranzicion":  "#c084fc",
+  "Lantanid":          "#f97316",
+  "Aktinid":           "#22d3ee",
+};
+
+function getCatColor(cat) {
+  return CAT_COLORS[cat] || "#00d4ff";
+}
+
+function createAtom(z) {
+  if (z < 1 || z > 118 || isNaN(z)) return;
+  currentZ = z;
+
+  if (animFrame) cancelAnimationFrame(animFrame);
+  electrons = [];
+
+  const shells = getShells(z);
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  const maxR = (canvas.width / 2) - 30;
+  const shellStep = maxR / (shells.length + 0.5);
+
+  shells.forEach((count, si) => {
+    const r = shellStep * (si + 1);
+    for (let i = 0; i < count; i++) {
+      const angle = (2 * Math.PI / count) * i + (si * 0.4);
+      const speed = 0.004 + 0.003 / (si + 1);
+      electrons.push({ shell: si, radius: r, angle, speed, count });
+    }
+  });
+
+  updateInfo(z, shells);
+  syncUI(z);
+  animate();
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const el = ELEMENTS[currentZ];
+  const color = getCatColor(el.cat);
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+
+  // Draw shell orbits
+  const shells = getShells(currentZ);
+  const maxR = (canvas.width / 2) - 30;
+  const shellStep = maxR / (shells.length + 0.5);
+
+  shells.forEach((_, si) => {
+    const r = shellStep * (si + 1);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.strokeStyle = `rgba(255,255,255,0.12)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // shell label
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "11px Segoe UI";
+    ctx.fillText(`n=${si+1}`, cx + r + 4, cy - 3);
+  });
+
+  // Nucleus glow
+  const nucR = Math.min(20 + currentZ * 0.15, 36);
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, nucR);
+  grad.addColorStop(0, "#fff");
+  grad.addColorStop(0.3, color);
+  grad.addColorStop(1, "transparent");
+  ctx.beginPath();
+  ctx.arc(cx, cy, nucR, 0, 2 * Math.PI);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Nucleus symbol
+  ctx.fillStyle = "#fff";
+  ctx.font = `bold ${nucR > 24 ? 14 : 11}px Segoe UI`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(el.sym, cx, cy);
+
+  // Draw electrons
+  electrons.forEach(e => {
+    e.angle += e.speed;
+    const ex = cx + e.radius * Math.cos(e.angle);
+    const ey = cy + e.radius * Math.sin(e.angle);
+
+    // Electron glow
+    const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, 6);
+    eg.addColorStop(0, "#fff");
+    eg.addColorStop(0.4, color);
+    eg.addColorStop(1, "transparent");
+    ctx.beginPath();
+    ctx.arc(ex, ey, 6, 0, 2 * Math.PI);
+    ctx.fillStyle = eg;
+    ctx.fill();
+  });
+
+  ctx.textAlign = "left";
+  animFrame = requestAnimationFrame(animate);
+}
+
+// ═══════════════════════════════════════════
+//  UI UPDATE
+// ═══════════════════════════════════════════
+function updateInfo(z, shells) {
+  const el = ELEMENTS[z];
+  const color = getCatColor(el.cat);
+
+  document.getElementById('infoSymbol').textContent = el.sym;
+  document.getElementById('infoSymbol').style.color = color;
+  document.getElementById('infoName').textContent = el.name;
+  document.getElementById('infoZ').textContent = `Z = ${z}`;
+  document.getElementById('infoMass').textContent = el.mass + " u";
+  document.getElementById('infoPeriod').textContent = el.period;
+  document.getElementById('infoGroup').textContent = el.group;
+  document.getElementById('infoCategory').textContent = el.cat;
+  document.getElementById('infoElectrons').textContent = z;
+  document.getElementById('infoNeutrons').textContent = NEUTRONS[z] || "?";
+
+  const shellsStr = shells.join(", ");
+  document.getElementById('shellsValue').textContent = shellsStr;
+  document.getElementById('shellsCount').textContent = shells.length;
+
+  // Update quiz labels
+  document.getElementById('q1label').textContent = `1️⃣ Sa elektrone ka shtresa e parë e ${el.name} (${el.sym})?`;
+  document.getElementById('q3label').textContent = `3️⃣ Sa shtresa elektronike ka atomi i ${el.name} (${el.sym})?`;
+
+  resetQuiz();
+}
+
+function syncUI(z) {
+  document.getElementById('zInput').value = z;
+  document.getElementById('elementDropdown').value = z;
+}
+
+// ═══════════════════════════════════════════
+//  DROPDOWN POPULATION
+// ═══════════════════════════════════════════
+function populateDropdown() {
+  const sel = document.getElementById('elementDropdown');
+  for (let i = 1; i <= 118; i++) {
+    const el = ELEMENTS[i];
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${i} – ${el.name} (${el.sym})`;
+    sel.appendChild(opt);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function navigate(dir) {
+  let z = parseInt(document.getElementById('zInput').value) + dir;
+  z = Math.max(1, Math.min(118, z));
+  createAtom(z);
+}
+
+function goRandom() {
+  createAtom(Math.floor(Math.random() * 118) + 1);
+}
+
+function onSearch() {
+  const val = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!val) return;
+  for (let i = 1; i <= 118; i++) {
+    const el = ELEMENTS[i];
+    if (el.sym.toLowerCase() === val || el.name.toLowerCase() === val || el.name.toLowerCase().startsWith(val)) {
+      document.getElementById('searchInput').value = '';
+      createAtom(i);
+      return;
+    }
+  }
+  alert("Elementi nuk u gjet. Provo me emrin ose simbolin (p.sh. Fe, Iron, oxygen).");
+}
+
+// ═══════════════════════════════════════════
+//  EVENT LISTENERS
+// ═══════════════════════════════════════════
+document.getElementById('zInput').addEventListener('change', function() {
+  let z = parseInt(this.value);
+  if (z >= 1 && z <= 118) createAtom(z);
+});
+document.getElementById('zInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { let z = parseInt(this.value); if (z >= 1 && z <= 118) createAtom(z); }
+});
+document.getElementById('elementDropdown').addEventListener('change', function() {
+  createAtom(parseInt(this.value));
+});
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') onSearch();
+});
+
+// ═══════════════════════════════════════════
+//  QUIZ
+// ═══════════════════════════════════════════
+function checkQuiz() {
+  const z = currentZ;
+  const shells = getShells(z);
+  let score = 0;
+
+  // Q1: electrons in first shell
+  const q1val = parseInt(document.getElementById('q1').value);
+  const correctQ1 = shells[0];
+  if (q1val === correctQ1) {
+    document.getElementById('fb1').textContent = "✅ Saktë! Shtresa e parë ka " + correctQ1 + " elektrone.";
+    document.getElementById('fb1').style.color = "#7fff6b";
+    score++;
+  } else {
+    document.getElementById('fb1').textContent = "❌ Jo saktë. Përgjigja e saktë: " + correctQ1;
+    document.getElementById('fb1').style.color = "#ff6b6b";
+  }
+
+  // Q2: electrons = atomic number (always true for neutral atom)
+  const q2val = document.getElementById('q2').value;
+  if (q2val === "true") {
+    document.getElementById('fb2').textContent = "✅ Saktë! Për atom neutral, elektronet = numri atomik Z.";
+    document.getElementById('fb2').style.color = "#7fff6b";
+    score++;
+  } else if (q2val === "false") {
+    document.getElementById('fb2').textContent = "❌ Jo saktë. Për atom neutral, elektronet = Z gjithmonë.";
+    document.getElementById('fb2').style.color = "#ff6b6b";
+  } else {
+    document.getElementById('fb2').textContent = "⚠️ Zgjidh një përgjigje.";
+    document.getElementById('fb2').style.color = "#ffd700";
+  }
+
+  // Q3: number of shells
+  const q3val = parseInt(document.getElementById('q3').value);
+  const correctQ3 = shells.length;
+  if (q3val === correctQ3) {
+    document.getElementById('fb3').textContent = "✅ Saktë! Ky atom ka " + correctQ3 + " shtresa.";
+    document.getElementById('fb3').style.color = "#7fff6b";
+    score++;
+  } else {
+    document.getElementById('fb3').textContent = "❌ Jo saktë. Përgjigja e saktë: " + correctQ3;
+    document.getElementById('fb3').style.color = "#ff6b6b";
+  }
+
+  const maxScore = q2val ? 3 : 2;
+  document.getElementById('quizScore').textContent =
+    score === 3 ? "🎉 Perfekt! 3/3 — Bravo!" :
+    score === 2 ? "👍 Mirë! 2/3" :
+    score === 1 ? "😐 1/3 — Provo sërish!" :
+    "😔 0/3 — Rishiko materialin!";
+  document.getElementById('quizScore').style.color =
+    score === 3 ? "#7fff6b" : score >= 2 ? "#ffd700" : "#ff6b6b";
+}
+
+function resetQuiz() {
+  ['q1','q2','q3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.value = '';
+    else el.value = '';
+  });
+  ['fb1','fb2','fb3'].forEach(id => document.getElementById(id).textContent = '');
+  document.getElementById('quizScore').textContent = '';
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+populateDropdown();
+createAtom(1);
+</script>
+
+<div style="
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(6px);
+  z-index: 999;
+  white-space: nowrap;
+">
+  Developed by <span style="color: rgba(0,212,255,0.75); font-weight: 700;">Andi Xhafaj</span>
+</div>
+
+</body>
+</html>
